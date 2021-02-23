@@ -1,0 +1,135 @@
+
+
+from selenium import webdriver
+import re
+import time
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+
+
+
+driver = webdriver.Chrome(ChromeDriverManager().install())
+
+
+
+
+
+login = "https://www.instagram.com/accounts/login/"
+driver.get(login)
+time.sleep(4)
+
+driver.find_element_by_name("username").click()
+driver.find_element_by_name("username").send_keys("")
+driver.find_element_by_name("password").click()
+driver.find_element_by_name("password").send_keys("")
+log_cl = driver.find_element_by_class_name("L3NKy")
+log_cl.click()   # clicks the login button
+time.sleep(4)
+
+
+url = 'http://instagram.com/' #go to profile
+driver.get(url)
+time.sleep(1)
+
+### Get the list of followers
+counter = 0
+followers=[]
+follower = int(driver.find_element_by_xpath('//*[@id="react-root"]/section/main/div/header/section/ul/li[2]/a/span').text)
+
+driver.find_element_by_css_selector('a.-nal3').click() #click the follower list
+time.sleep(1)
+while len(followers) < follower-2:
+    for follow in driver.find_elements_by_css_selector('div.d7ByH'):
+        if not follow.text in followers:
+            followers.append(follow.text)
+            counter = counter + 1
+    #if len(followers)%12 ==0:
+    driver.find_element_by_css_selector('div.pbNvD.fPMEg.HYpXt').click()
+    webdriver.ActionChains(driver).key_down(Keys.SPACE).key_up(Keys.SPACE).perform()
+    time.sleep(0.5)
+
+print(len(followers))
+follows = {}
+for follower in followers:
+    follows.update({follower:0})
+
+
+url = 'http://instagram.com/almighty.opop/' #go to profile
+driver.get(url)
+time.sleep(1)
+
+
+
+
+total = driver.find_element_by_css_selector('span.g47SY').text #get the number of posts
+print(total)
+
+
+driver.find_element_by_css_selector('div.eLAPa').click() #click on the first post
+time.sleep(1)
+links=[]
+for i in range(0,int(total)-1):
+    links.append(driver.current_url)
+    time.sleep(1)
+    driver.find_element_by_css_selector('a._65Bje.coreSpriteRightPaginationArrow').click()  # click on the next post
+
+url = 'http://instagram.com/almighty.opop/' #go to profile
+driver.get(url)
+time.sleep(1)
+
+for i in links:
+    driver.get(i)
+    time.sleep(2)
+    total = driver.find_element_by_css_selector('div.Nm9Fw').text  # get the number of the total likes
+    print(total)
+
+    users = {}
+
+    users.update({total[total.find('by ')+3:total.find('and')]:1}) #add the first like
+    time.sleep(1)
+
+    driver.find_element_by_css_selector('button.sqdOP.yWX7d._8A5w5').click()  # click on the first post likes
+    time.sleep(1)
+
+
+    actionChain = webdriver.ActionChains(driver)
+    likes = total[total.find('and ')+4:len(total)-7]
+    count = 0
+    while len(users) != count:
+        count = len(users)
+        for like in driver.find_elements_by_css_selector('span.Jv7Aj.MqpiF'):
+            if not like.text in users:
+                users.update({like.text:1})
+        try:
+            myElem = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.pbNvD.fPMEg')))
+        except TimeoutException:
+            print('time is out')
+            break
+        driver.find_element_by_css_selector('div.pbNvD.fPMEg').click()
+        webdriver.ActionChains(driver).key_down(Keys.SPACE).key_up(Keys.SPACE).perform()
+        time.sleep(1)
+
+    print(users)
+    print(len(users))
+
+    #likers = list(set([x for x in users if users.count(x) > 0]))
+    for follow in follows:
+        if follow in users:
+            follows[follow] = follows[follow] + 1
+
+
+
+
+print(sorted(follows.items(), key = lambda x:x[1],reverse=True))
+
+
+
+
+
+
+driver.quit()
